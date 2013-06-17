@@ -99,14 +99,14 @@ def SamtoBam(sam_filename, bam_filename=None):
         raise ex
 
 def convertSortAlign(output_filename):
-        #Pregenerate file names for all the intermediate steps (output_filename is the output of the Bowtie2 alignment)
-    #Note that the file extension is not always given depending on the input conventions of the tool
+    # Pregenerate file names for all the intermediate steps (output_filename is the output of the Bowtie2 alignment)
+    # Note that the file extension is not always given depending on the input conventions of the tool being called
     sam_filename=output_filename+'.sam'
     bam_filename=output_filename+'.bam'
     sorted_filename_input=output_filename+'_sorted'
     sorted_filename_output=output_filename+'_sorted.bam'
     
-    #convert sam to bam
+    # convert sam to bam
     print 'Converting {0} to {1} . . .'.format(sam_filename,bam_filename)
     try:
         SamtoBam(sam_filename,bam_filename)
@@ -114,7 +114,7 @@ def convertSortAlign(output_filename):
         print "Error converting sam to bam ({0}): {1}".format(ex.errno, ex.strerror)
         return False   
     
-    #sort
+    # sort
     print 'Sorting {0} -> {1}'.format(bam_filename,sorted_filename_output)
     try:
         pysam.sort(bam_filename,sorted_filename_input)
@@ -122,7 +122,7 @@ def convertSortAlign(output_filename):
         print "Error sorting bam file ({0}): {1}".format(ex.errno, ex.strerror)
         return False   
     
-    #index
+    # index
     print 'Indexing {0} . . .'.format(sorted_filename_output)
     try:
         pysam.index(sorted_filename_output)
@@ -137,10 +137,10 @@ def convertSortAlign(output_filename):
 def alignSangerFromRaw(sequence_directory,reference_genome,output_filename,bowtie2_args=None):
     """
     Generates a sorted, indexed alignment against reference_genome from all the Sanger 
-        sequencing reads (in ABI format with quality scores) in sequence_directory.
-        Sequence files must be have .AB1 extensions.
+        sequencing reads (in raw seq format with quality scores) in sequence_directory.
+        Sequence files must be have .seq extensions.
         
-        First it uses BioPython to generate a FASTQ file for each .AB1 file in sequence_directory.
+        First it uses creates a FASTA file from each seq file by prepending a minimal header.
         Next it calls Bowtie2 to generate an alignment against the given reference_genome 
             (assumes the executable is on the path and the index is reachable)
             bowtie2: any additional arguments to pass to bowtie2. If none given, defaults to:
@@ -159,7 +159,7 @@ def alignSangerFromRaw(sequence_directory,reference_genome,output_filename,bowti
         dir_listing=os.listdir(sequence_directory)
     except Exception as ex:
         print "Error changing to {0} ({1}): {2}".format(sequence_directory,ex.errno, ex.strerror)
-        return False   
+        return False
 
     try:
         for filename in dir_listing:
@@ -243,7 +243,7 @@ def main():
     args=arg_parser.parse_args()
     
     if args.raw and args.abi:
-        #these are mutually exclusive!
+        # these are mutually exclusive options
         print "Either --raw or --abi may be chosen, but not both."
     if pysam_loaded:
         print "pysam found"
@@ -256,5 +256,6 @@ def main():
         alignSangerFromRaw(args.sequence_directory, args.bowtie2_index, args.output_filename, args.bowtie2args)
     else:
         alignSangerFromABI(args.sequence_directory, args.bowtie2_index, args.output_filename, args.bowtie2args)
+
 if __name__ == "__main__":
     sys.exit(main())
